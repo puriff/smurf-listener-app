@@ -86,6 +86,7 @@ const Container = styled.div`
 
                         .second-recipe {
                             height: 100%;
+
                         }
 
                         .third-recipe {
@@ -282,18 +283,6 @@ function Main() {
         }
     }
 
-    async function getImages(fullRecipe) {
-        let ingredientsIMG = []
-        for (let index = 0; index < fullRecipe.length; index++) {
-            if (fullRecipe[index].length > 1) {
-                ingredientsIMG[index] = await getImages(fullRecipe[index])
-            } else {
-                ingredientsIMG[index] = "https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(fullRecipe[index]))+"."+(ingredientList[Number(fullRecipe[index])])+".jpg"
-            }
-        }
-        return ingredientsIMG
-    }
-
     function parseImages(item) {
         let ingredients = [...item.ingredients];
         let potion1 = [];
@@ -312,10 +301,20 @@ function Main() {
                 }
             }            
         }
-
         return (
-            <div> 
-                <p>{ingredients}</p><p>{potion1}</p><p>{potion2}</p>
+            <div className="ingredients-div"> 
+                {(potion2 != []) ? potion2.map((potion2Ingredient) => {
+                    return (potion2Ingredient != -1) ? <Box className="third-recipe">  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion2Ingredient))+"."+(ingredientList[Number(potion2Ingredient)])+".jpg"}></img> </Box> : null
+                }) : null }   
+                <p>=></p>  
+                { (potion1 != []) ? potion1.map((potion1Ingredient) => {
+                    return (potion1Ingredient != -1) ? <Box className="second-recipe">  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion1Ingredient))+"."+(ingredientList[Number(potion1Ingredient)])+".jpg"}></img></Box> : null
+                })  : null }
+                <p>=></p>
+                { ingredients.map((ingredient) => {
+                    return (ingredient != -1) ? <Box className="first-recipe">  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(ingredient))+"."+(ingredientList[Number(ingredient)])+".jpg"}></img></Box> : null
+                })}
+                =>
             </div>
         )
     }
@@ -363,7 +362,7 @@ function Main() {
                                                             ))}
                                                    <h1>] =</h1>*/}
                                                    {parseImages(item)}
-                                                //<img className="img-div" src={item.image}></img>
+                                                    {<img className="img-div" src={item.image}></img>}
                                             </div>
                                         </ListItem>
                                 ))}
