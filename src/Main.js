@@ -17,9 +17,10 @@ const Container = styled.div`
     padding-left: 10px;
     
     .columns {
-        position: relative;
+        position: absolute;
         margin: auto;
-        width: 90%; 
+        left: 0;
+        width: 100%; 
         height: 100%;
         display: flex;
         align-items: center;
@@ -62,9 +63,18 @@ const Container = styled.div`
                     padding-bottom: 0;
                 }
 
+                .text-symbol {
+                    font-size: 18px;
+                }
+
+                .item-name {
+                    font-weight: bold;
+                    text-decoration: underline;
+                }
+
                 .recipe-div {
                     position: relative;
-                    height: 20%;
+                    height: 25%;
                     width: 100%;
                     border-bottom: 1px solid white;
                     display: flex;
@@ -78,26 +88,47 @@ const Container = styled.div`
                         align-items: center;
                         justify-content: center;
                         width: fit-content;
-                        height: 100%;
+                        height: 90%;
 
                         .first-recipe {  
+                            display: flex;
+                            flex-direction: row;
+                            align-items: center;
+                            justify-content: center;
+                            width: fit-content;
                             height: 100%;
+                            background: ${darkTheme.background};
+                            border-radius: 5px;
+                            padding-right: 5px;
                         }
 
                         .second-recipe {
+                            display: flex;
+                            flex-direction: row;
+                            align-items: center;
+                            justify-content: center;
+                            width: fit-content;
                             height: 100%;
-
+                            background: ${darkTheme.content_div};
+                            border-radius: 5px;
                         }
 
                         .third-recipe {
+                            display: flex;
+                            flex-direction: row;
+                            align-items: center;
+                            justify-content: center;
+                            width: fit-content;
                             height: 100%;
+                            background: #383838;
+                            border-radius: 5px;
                         }
 
 
                         .img-div {
                             aspect-ratio: 1/1;
-                            height: 50px;
-                            margin-left: 15px;
+                            height: 80%;
+                            margin-left: 5px;
                         }
                     }
                 }        
@@ -254,6 +285,7 @@ function Main() {
         }
         return ingredientsTMP
       }
+      
     
       //there is a potion in latest recipe list, so need to get ingredient of that potion aswell
     async function getPotionIngredients(currentBlock, lastRecipeFound) {
@@ -263,6 +295,7 @@ function Main() {
         for (let index = 0; index < pastEvents.length; index++) {
             //check if recipe minted id = recipe we're looking for
             if(Number(pastEvents[index].args._recipe_id) == lastRecipeFound) {
+                console.log(pastEvents[index])
                 //get ingredients from potion
                 let ingredients = pastEvents[index].args._ingredients
                 let ingredientsTMP = []  
@@ -303,18 +336,24 @@ function Main() {
         }
         return (
             <div className="ingredients-div"> 
-                {(potion2 != []) ? potion2.map((potion2Ingredient) => {
-                    return (potion2Ingredient != -1) ? <Box className="third-recipe">  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion2Ingredient))+"."+(ingredientList[Number(potion2Ingredient)])+".jpg"}></img> </Box> : null
-                }) : null }   
-                <p>=></p>  
-                { (potion1 != []) ? potion1.map((potion1Ingredient) => {
-                    return (potion1Ingredient != -1) ? <Box className="second-recipe">  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion1Ingredient))+"."+(ingredientList[Number(potion1Ingredient)])+".jpg"}></img></Box> : null
-                })  : null }
-                <p>=></p>
-                { ingredients.map((ingredient) => {
-                    return (ingredient != -1) ? <Box className="first-recipe">  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(ingredient))+"."+(ingredientList[Number(ingredient)])+".jpg"}></img></Box> : null
-                })}
-                =>
+                <Box className="first-recipe">
+                    <Box className="second-recipe">
+                        <Box className="third-recipe">
+                            {(potion2.length != 0) ? potion2.map((potion2Ingredient, index) => {
+                                return  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion2Ingredient))+"."+(ingredientList[Number(potion2Ingredient)])+".jpg"}></img>
+                            } ): null } 
+                            {(potion2.length != 0) ? <p className="text-symbol">=></p> : null} 
+                        </Box>
+                        { (potion1 != []) ? potion1.map((potion1Ingredient, index) => {
+                            return (potion1Ingredient != -1) ? <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion1Ingredient))+"."+(ingredientList[Number(potion1Ingredient)])+".jpg"}></img> : null
+                        }) : null }
+                        
+                        {((potion1.length != 0)) ? <p className="text-symbol">=></p> : null}
+                    </Box>
+                    { ingredients.map((ingredient, index3) => {
+                        return (ingredient != -1) ?  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(ingredient))+"."+(ingredientList[Number(ingredient)])+".jpg"}></img> : null
+                    })}
+                </Box>
             </div>
         )
     }
@@ -351,18 +390,9 @@ function Main() {
                             <List className='list-div'>
                                 {mintedRecipes.map((item, index) => (   
                                         <ListItem className="recipe-div" key={index}> 
-                                            {item.name}
+                                            <span className="item-name">{item.name}</span>
                                             <div className="ingredients-div"> 
-                                                {/*<h1>[</h1>{(item.ingredients).map((ingredient, index) => (
-                                                            ((ingredient.length) > 3) ? <Box className="first-recipe"> <img className="img-div" src={ingredient}></img></Box> : 
-                                                                (ingredient).map((potion, index1) => ( 
-                                                                ((potion.length) > 3) ? <Box className="second-recipe">  <img className="img-div" src={potion}></img> </Box> : 
-                                                                    (potion).map((potion2, index2) => (<Box className="third-recipe"><img className="img-div" src={potion2}/> </Box>))       
-                                                                ))
-                                                            ))}
-                                                   <h1>] =</h1>*/}
                                                    {parseImages(item)}
-                                                    {<img className="img-div" src={item.image}></img>}
                                             </div>
                                         </ListItem>
                                 ))}
