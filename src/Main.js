@@ -17,10 +17,9 @@ const Container = styled.div`
     padding-left: 10px;
     
     .columns {
-        position: absolute;
+        position: relative;
         margin: auto;
-        left: 0;
-        width: 100%; 
+        width: 40%; 
         height: 100%;
         display: flex;
         align-items: center;
@@ -29,7 +28,7 @@ const Container = styled.div`
         .column {
             position: relative;
             height: 95%;
-            width: 95%;
+            width: 98%;
 
             .header {
                 position: relative;
@@ -49,12 +48,32 @@ const Container = styled.div`
             }
 
             .column-body {
-                overflow: hidden;
+                overflow: auto;
                 position: relative;
                 background: ${darkTheme.column_background};
                 width: 100%;
                 height: 90%;
                 border: 1px solid white;
+
+                /* width */
+                ::-webkit-scrollbar {
+                width: 5px;
+                }
+        
+                /* Track */
+                ::-webkit-scrollbar-track {
+                background: ${darkTheme.balance_background};
+                }
+        
+                /* Handle */
+                ::-webkit-scrollbar-thumb {
+                background: #888;
+                }
+        
+                /* Handle on hover */
+                ::-webkit-scrollbar-thumb:hover {
+                background: ${darkTheme.background};
+                }
 
                 .list-div {
                     width: 100%;
@@ -97,7 +116,6 @@ const Container = styled.div`
                             justify-content: center;
                             width: fit-content;
                             height: 100%;
-                            background: ${darkTheme.background};
                             border-radius: 5px;
                             padding-right: 5px;
                         }
@@ -109,8 +127,9 @@ const Container = styled.div`
                             justify-content: center;
                             width: fit-content;
                             height: 100%;
-                            background: ${darkTheme.content_div};
+                            background: #383838;
                             border-radius: 5px;
+                            border-right: 1px white solid;
                         }
 
                         .third-recipe {
@@ -120,14 +139,14 @@ const Container = styled.div`
                             justify-content: center;
                             width: fit-content;
                             height: 100%;
-                            background: #383838;
+                            background: grey;
                             border-radius: 5px;
+                            border-right: 1px white solid;
                         }
-
 
                         .img-div {
                             aspect-ratio: 1/1;
-                            height: 80%;
+                            height: 60%;
                             margin-left: 5px;
                         }
                     }
@@ -145,6 +164,9 @@ const providerPolygon = new ethers.providers.StaticJsonRpcProvider(
     }
   );
 
+const abiPoly = [
+    "event Mint_Ticket_Success(address indexed _from, uint _recipeId)",
+]
 const abiMix = [
     "event Mint_Recipe_Success(address indexed _from, uint _recipe_id, bytes _signature, uint[] _ingredients)",
     "event Mint_Recipe_Failed(address indexed _from, uint[] _ingredients)",
@@ -153,6 +175,8 @@ const abiMix = [
 
 const smurfMixAddress = "0x48c75FbF0452fA8FF2928Ddf46B0fE7629cCa2FF"
 const smurfMixContract = new ethers.Contract(smurfMixAddress, abiMix, providerPolygon)
+const smurfTicketAddress = "0xBaC7E3182BB6691F180Ef91f7Ae4530Abb3dc08D"
+const smurfTicketContract = new ethers.Contract(smurfTicketAddress, abiPoly, providerPolygon)
 
 const ingredientList = [
     "Blue_Clay",
@@ -180,21 +204,17 @@ const ingredientList = [
   ]
 
 function Main() {
-    let testRecipe ={ name: "test",
-                        image: "https://metadata.thesmurfssociety.com/potions/nft/Potion_7.jpg",
-                        level: 7,
-                        ingredients: [["https://metadata.thesmurfssociety.com/ingredients/nft/18.Strange_Cube.jpg", "https://metadata.thesmurfssociety.com/ingredients/nft/10.Sticky_Honey.jpg", ["https://metadata.thesmurfssociety.com/ingredients/nft/17.Shooting_Star_Powder.jpg","https://metadata.thesmurfssociety.com/ingredients/nft/19.Carnivorous_Plant_Saliva.jpg","https://metadata.thesmurfssociety.com/ingredients/nft/20.Love_Potion.jpg"]],
-                        "https://metadata.thesmurfssociety.com/ingredients/nft/4.Tuberose_Flowers.jpg",
-                        "https://metadata.thesmurfssociety.com/ingredients/nft/10.Sticky_Honey.jpg"]
-                    }
-    //add other stuff
+
     let testID = {  name: "test",
-                    level: 7,
-                    image: "https://metadata.thesmurfssociety.com/potions/nft/Potion_7.jpg",
                     ingredients: [[2, [18, 6, 9], 15], 12, 7]
     }
+    let testNew = {name: "testNew",
+                        ingredients: [1,9,15]}
+
     const [mintedRecipes, setMintedRecipes] = useState([testID])
     const [failedRecipes, setFailedRecipes] = useState([])
+    const [newRecipes, setNewRecipes] = useState([testNew])
+    const [newCrystalRecipe, setNewCrystalRecipes] = useState([])
 
     let headers = ["Latest successful recipes", "New recipes", "New crystal recipes"]
 
@@ -205,35 +225,11 @@ function Main() {
             const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipe_id).toString());
             const { data } = await axios.get(url);
             let recipeName = data.name
-            let imgSrc = data.image
-            let attributes = data.attributes
-            let level
-            attributes.map((item) => {
-                if(item.trait_type == "Level")
-                {
-                    level = item.value
-                }
-            })
-
-            /*let ingredientsIMG = []
-            for (let index = 0; index < _ingredients.length; index++) {
-                let img
-               if(Number(_ingredients[index]) > 99) {
-                    img = "https://metadata.thesmurfssociety.com/potions/nft/Potion_3.jpg"
-               }
-               else {
-                    img = "https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(_ingredients[index]))+"."+(ingredientList[Number(_ingredients[index])])+".jpg"
-               }
-               ingredientsIMG[index] = img
-            }*/
 
             let currentBlock = event.blockNumber
-            let fullRecipe = await getRecipe(currentBlock, _ingredients, "Minted recipe")
-            //let recipeImages = await getImages(fullRecipe)          
-            //console.log(fullRecipe)
+            let fullRecipe = await getRecipe(currentBlock, _ingredients)
+
             let mintedRecipe = {name: recipeName,
-                                image: imgSrc,
-                                level: level,
                                 ingredients: fullRecipe
                                 }
             setMintedRecipes(oldArray => [mintedRecipe,...oldArray])
@@ -243,7 +239,82 @@ function Main() {
             let mintedRecipe = Number(_ingredients[0]) + " , " + Number(_ingredients[1]) + " , " + Number(_ingredients[2])
             setFailedRecipes(oldArray => [mintedRecipe,...oldArray])
         })
+
+        smurfMixContract.on("New_Recipe_Discovered", async(_from, _recipeId, event) => {
+            console.log("")
+            console.log('------------------------------------')
+            console.log("NEW RECIPE :"+_recipeId)
+
+            const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipeId).toString());
+            const { data } = await axios.get(url);
+            let recipeName = data.name
+    
+            let newRecipe
+            let currentBlock = event.blockNumber
+            //query block at which newest recipe was discovered, for the mint success event
+            let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', currentBlock, currentBlock);
+                //loop through list of that event that happened in the block
+                for (let index = 0; index < mintRecipeEvent.length; index++) {
+                //if finds an event with same recipe ID created as newest recipe
+                if(Number(mintRecipeEvent[index].args._recipe_id) == Number(_recipeId))
+                    {
+                    //get ingredient
+                    let ingredients = mintRecipeEvent[index].args._ingredients
+                    newRecipe = await getRecipe(currentBlock, ingredients)
+                    }
+            }
+    
+            let latestNewRecipe = {name: recipeName,
+                                    ingredients: newRecipe
+                                    }
+    
+            setNewRecipes(oldArray => [latestNewRecipe,...oldArray])
+        })
+
+        smurfTicketContract.on("Mint_Ticket_Success", async(_from, _recipeId, event) => {
+            let lastTicketMint = _recipeId
+            let currentBlock = event.blockNumber
+            let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-10000, currentBlock);
+
+            for (let index = 0; index < newRecipeEvents.length; index++) {
+                let newRecipeEvent = newRecipeEvents[index]
+                let _recipe_Id = newRecipeEvent.args._recipe_id
+                const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipe_Id).toString());
+                const { data } = await axios.get(url);
+                let imgSrc = data.image
+                let recipeName = data.name
+
+                if(_recipe_Id = lastTicketMint) {
+                    let newRecipe
+                    //let currentBlock = event.blockNumber
+                    //query block at which newest recipe was discovered, for the mint success event
+                    let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', newRecipeEvent.blockNumber, newRecipeEvent.blockNumber);
+                        //loop through list of that event that happened in the block
+                        for (let index = 0; index < mintRecipeEvent.length; index++) {
+                            //if finds an event with same recipe ID created as newest recipe
+                            if(Number(mintRecipeEvent[index].args._recipe_id) == Number(_recipe_Id))
+                            {
+                                //get ingredient
+                                let ingredients = mintRecipeEvent[index].args._ingredients
+                                newRecipe = await getRecipe(currentBlock, ingredients)
+
+                                let newCrystalRecipe = {name: recipeName,
+                                    image: imgSrc,
+                                    ingredients: newRecipe
+                                    }
+                        
+                                setNewCrystalRecipes(oldArray => [newCrystalRecipe,...oldArray])  
+                                break
+                            }
+                    }                
+                }
+            }
+        })
     }, [])
+
+    //on button click
+    //get last new recipe events
+    //exec code from on event received
 
     useEffect(() => {
         if(failedRecipes.length > 10) {
@@ -261,7 +332,15 @@ function Main() {
         }
     }, [mintedRecipes])
 
-    async function getRecipe(blockNumber, ingredients, message) {    
+    useEffect(() => {
+        if(newRecipes.length > 10) {
+            const copyArr = [...newRecipes];
+            copyArr.pop();
+            setNewRecipes(copyArr)
+        }
+    }, [newRecipes])
+
+    async function getRecipe(blockNumber, ingredients) {    
         let ingredientsTMP = []  
         for (let index = 0; index < ingredients.length; index++) {
             //check if there's a potion in the recipe
@@ -337,19 +416,20 @@ function Main() {
         return (
             <div className="ingredients-div"> 
                 <Box className="first-recipe">
-                    <Box className="second-recipe">
-                        <Box className="third-recipe">
-                            {(potion2.length != 0) ? potion2.map((potion2Ingredient, index) => {
-                                return  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion2Ingredient))+"."+(ingredientList[Number(potion2Ingredient)])+".jpg"}></img>
-                            } ): null } 
-                            {(potion2.length != 0) ? <p className="text-symbol">=></p> : null} 
-                        </Box>
-                        { (potion1 != []) ? potion1.map((potion1Ingredient, index) => {
+                    {(potion1.length != 0) ?
+                        <Box className="second-recipe">
+                            {(potion2.length != 0) ?
+                                <Box className="third-recipe">
+                                    {potion2.map((potion2Ingredient, index) => {
+                                        return  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion2Ingredient))+"."+(ingredientList[Number(potion2Ingredient)])+".jpg"}></img>
+                                    } )} 
+                                </Box> : null 
+                            }
+                        {potion1.map((potion1Ingredient, index) => {
                             return (potion1Ingredient != -1) ? <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(potion1Ingredient))+"."+(ingredientList[Number(potion1Ingredient)])+".jpg"}></img> : null
-                        }) : null }
-                        
-                        {((potion1.length != 0)) ? <p className="text-symbol">=></p> : null}
-                    </Box>
+                        })}
+                    </Box> : null
+                    } 
                     { ingredients.map((ingredient, index3) => {
                         return (ingredient != -1) ?  <img className="img-div" src={"https://metadata.thesmurfssociety.com/ingredients/nft/"+(Number(ingredient))+"."+(ingredientList[Number(ingredient)])+".jpg"}></img> : null
                     })}
@@ -358,28 +438,57 @@ function Main() {
         )
     }
 
+    async function loadNewRecipes() {
+        //replace this with event.blockNumber
+        let currentBlock = await providerPolygon.getBlockNumber()
+
+        let events = await smurfTicketContract.queryFilter('Mint_Ticket_Success', currentBlock-75000, currentBlock);
+        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-75000, currentBlock);
+
+        for (let index = 0; index < events.length; index++) {
+            
+            let lastTicketMint = Number(events[index].args._recipeId)
+
+            for (let index = 0; index < newRecipeEvents.length; index++) {
+                let newRecipeEvent = newRecipeEvents[index]
+                let _recipeId = newRecipeEvent.args._recipe_id
+                const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipeId).toString());
+                const { data } = await axios.get(url);
+                let imgSrc = data.image
+                let recipeName = data.name
+
+                if(_recipeId = lastTicketMint) {
+                    let newRecipe
+                    //let currentBlock = event.blockNumber
+                    //query block at which newest recipe was discovered, for the mint success event
+                    let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', newRecipeEvent.blockNumber, newRecipeEvent.blockNumber);
+                        //loop through list of that event that happened in the block
+                        for (let index = 0; index < mintRecipeEvent.length; index++) {
+                            //if finds an event with same recipe ID created as newest recipe
+                            if(Number(mintRecipeEvent[index].args._recipe_id) == Number(_recipeId))
+                            {
+                                //get ingredient
+                                let ingredients = mintRecipeEvent[index].args._ingredients
+                                newRecipe = await getRecipe(currentBlock, ingredients)
+                                console.log(newRecipe)
+
+                                let newCrystalRecipe = {name: recipeName,
+                                    image: imgSrc,
+                                    ingredients: newRecipe
+                                    }
+                        
+                                setNewCrystalRecipes(oldArray => [newCrystalRecipe,...oldArray])  
+                                break
+                            }
+                    }                
+                }
+            }
+        }
+    }
+    //CHANGE NEW RECIP AND CRYSTAL DISPLAY TO HORIZONTAL
     return (
         <Container>
-            {/*<div className="columns">
-                    <div className="column">
-                        <div className="header">
-                            <div className="header-text">
-                                {headers[0]}
-                            </div>
-                        </div>
-                        <div className="column-body">
-                            <List className="list-div">
-                                {failedRecipes.map((item, index) => ( 
-                                        <ListItem className="recipe-div" key={index}>
-                                            {item}
-                                        </ListItem>   
-                                ))}  
-                            </List>  
-                        </div>
-                    </div>
-                </div>*/}
-
-                <div className="columns">
+            <div className="columns">
                     <div className="column">
                         <div className="header">
                             <div className="header-text">
@@ -397,6 +506,51 @@ function Main() {
                                         </ListItem>
                                 ))}
                             </List>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="columns">
+                    <div className="column">
+                        <div className="header">
+                            <div className="header-text">
+                                {headers[2]}
+                            </div>
+                        </div>
+                        <div className="column-body">
+                            <List className='list-div'>
+                                {newCrystalRecipe.map((item, index) => (   
+                                        <ListItem className="recipe-div" key={index}> 
+                                            <span className="item-name">{item.name}</span>
+                                            <div className="ingredients-div"> 
+                                                   {parseImages(item)}
+                                            </div>
+                                        </ListItem>
+                                ))}
+                            </List>
+                            <Button style={{position:"absolute",bottom:"0"}} onClick={() => loadNewRecipes()}>LOAD NEW RECIPES</Button> 
+                        </div>
+                    </div>
+                </div>
+
+            <div className="columns">
+                    <div className="column">
+                        <div className="header">
+                            <div className="header-text">
+                                {headers[0]}
+                            </div>
+                        </div>
+                        <div className="column-body">
+                            <List className="list-div">
+                                {newRecipes.map((item, index) => ( 
+                                        <ListItem className="recipe-div" key={index}>
+                                            <span className="item-name">{item.name}</span>
+                                            <div className="ingredients-div"> 
+                                                   {parseImages(item)}
+                                            </div>
+                                        </ListItem>   
+                                ))}
+                            </List>  
                         </div>
                     </div>
                 </div>
