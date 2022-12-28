@@ -8,18 +8,17 @@ import ListItem from "@mui/material/ListItem";
 
 const Container = styled.div`
     position: relative;
-    width: 95%;
+    width: 98%;
     height: 95%;
     display: flex;
-    background: ${darkTheme.content_div};
-    border-radius: 15px;
-    padding-right: 10px;
-    padding-left: 10px;
+    margin: auto;
+    background: ${darkTheme.background};
+    border-radius: 5px;
     
     .columns {
         position: relative;
         margin: auto;
-        width: 40%; 
+        min-width: 33.33%; 
         height: 100%;
         display: flex;
         align-items: center;
@@ -39,6 +38,9 @@ const Container = styled.div`
                 align-items: center;
                 justify-content: center;
                 border: 1px solid white;
+                border-radius: 5px;
+                border-bottom: none;
+               
 
                 .header-text {
                     color: white;
@@ -54,6 +56,7 @@ const Container = styled.div`
                 width: 100%;
                 height: 90%;
                 border: 1px solid white;
+                border-radius: 5px;
 
                 /* width */
                 ::-webkit-scrollbar {
@@ -117,7 +120,7 @@ const Container = styled.div`
                             width: fit-content;
                             height: 100%;
                             border-radius: 5px;
-                            padding-right: 5px;
+                            padding-right: 3px;
                         }
 
                         .second-recipe {
@@ -213,14 +216,17 @@ function Main() {
 
     const [mintedRecipes, setMintedRecipes] = useState([testID])
     const [failedRecipes, setFailedRecipes] = useState([])
-    const [newRecipes, setNewRecipes] = useState([testNew])
-    const [newCrystalRecipe, setNewCrystalRecipes] = useState([])
+    const [newRecipes, setNewRecipes] = useState([testID])
+    const [newCrystalRecipe, setNewCrystalRecipes] = useState([testID])
 
     let headers = ["Latest successful recipes", "New recipes", "New crystal recipes"]
 
     
     
     useEffect(() => {
+        loadLatestCrystalRecipes()
+        loadLatestMintedRecipes()
+        loadNewestRecipes()
         smurfMixContract.on("Mint_Recipe_Success", async(from, _recipe_id,_signature, _ingredients, event) => {   
             const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipe_id).toString());
             const { data } = await axios.get(url);
@@ -241,10 +247,6 @@ function Main() {
         })
 
         smurfMixContract.on("New_Recipe_Discovered", async(_from, _recipeId, event) => {
-            console.log("")
-            console.log('------------------------------------')
-            console.log("NEW RECIPE :"+_recipeId)
-
             const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipeId).toString());
             const { data } = await axios.get(url);
             let recipeName = data.name
@@ -296,7 +298,7 @@ function Main() {
                             {
                                 //get ingredient
                                 let ingredients = mintRecipeEvent[index].args._ingredients
-                                newRecipe = await getRecipe(currentBlock, ingredients)
+                                newRecipe = await getRecipe(newRecipeEvent.blockNumber, ingredients)
 
                                 let newCrystalRecipe = {name: recipeName,
                                     image: imgSrc,
@@ -345,7 +347,6 @@ function Main() {
         for (let index = 0; index < ingredients.length; index++) {
             //check if there's a potion in the recipe
             if(Number(ingredients[index]) > 99) {
-                console.log(Number(ingredients[index]) +" is a Potion 1")
                 let ingredientsFull = await getPotionIngredients(blockNumber, Number(ingredients[index]))
                 let ingredientsPotion2 = []
                 for (let index2 = 0; index2 < ingredientsFull.length; index2++) {
@@ -374,7 +375,6 @@ function Main() {
         for (let index = 0; index < pastEvents.length; index++) {
             //check if recipe minted id = recipe we're looking for
             if(Number(pastEvents[index].args._recipe_id) == lastRecipeFound) {
-                console.log(pastEvents[index])
                 //get ingredients from potion
                 let ingredients = pastEvents[index].args._ingredients
                 let ingredientsTMP = []  
@@ -382,7 +382,6 @@ function Main() {
                 for (let index = 0; index < ingredients.length; index++) {
                     //if yes, we start agane
                     if(Number(ingredients[index]) > 99 ) {
-                        console.log(Number(ingredients[index]) + " is a potion 2")
                         let ingredientsFull = await getPotionIngredients(currentBlock, Number(ingredients[index]))
                         ingredientsTMP[index] = [Number(ingredientsFull[0]),Number(ingredientsFull[1]),Number(ingredientsFull[2])]
                     }
@@ -438,15 +437,16 @@ function Main() {
         )
     }
 
-    async function loadNewRecipes() {
+    async function loadLatestCrystalRecipes() {
         //replace this with event.blockNumber
         let currentBlock = await providerPolygon.getBlockNumber()
-
-        let events = await smurfTicketContract.queryFilter('Mint_Ticket_Success', currentBlock-75000, currentBlock);
-        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-75000, currentBlock);
+        let count = 0
+        let events = await smurfTicketContract.queryFilter('Mint_Ticket_Success', currentBlock-10000, currentBlock);
+        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-10000, currentBlock);
 
         for (let index = 0; index < events.length; index++) {
-            
+            if(count >= 5) {break}
+
             let lastTicketMint = Number(events[index].args._recipeId)
 
             for (let index = 0; index < newRecipeEvents.length; index++) {
@@ -462,37 +462,91 @@ function Main() {
                     //let currentBlock = event.blockNumber
                     //query block at which newest recipe was discovered, for the mint success event
                     let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', newRecipeEvent.blockNumber, newRecipeEvent.blockNumber);
-                        //loop through list of that event that happened in the block
+                    //loop through list of that event that happened in the block
                         for (let index = 0; index < mintRecipeEvent.length; index++) {
                             //if finds an event with same recipe ID created as newest recipe
                             if(Number(mintRecipeEvent[index].args._recipe_id) == Number(_recipeId))
                             {
                                 //get ingredient
                                 let ingredients = mintRecipeEvent[index].args._ingredients
-                                newRecipe = await getRecipe(currentBlock, ingredients)
-                                console.log(newRecipe)
+                                newRecipe = await getRecipe(newRecipeEvent.blockNumber, ingredients)
 
                                 let newCrystalRecipe = {name: recipeName,
                                     image: imgSrc,
                                     ingredients: newRecipe
                                     }
                         
-                                setNewCrystalRecipes(oldArray => [newCrystalRecipe,...oldArray])  
-                                break
+                                setNewCrystalRecipes(oldArray => [newCrystalRecipe,...oldArray])                                 
                             }
                     }                
                 }
             }
+            count++
         }
     }
-    //CHANGE NEW RECIP AND CRYSTAL DISPLAY TO HORIZONTAL
-    return (
+
+    async function loadLatestMintedRecipes() {
+        let currentBlock = await providerPolygon.getBlockNumber()
+        let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', currentBlock-1000,currentBlock);
+
+        let count = 0
+        for (let index = 0; index < mintRecipeEvent.length; index++) {
+            if(count >= 5) {break}
+            const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(mintRecipeEvent[index].args._recipe_id).toString());
+            const { data } = await axios.get(url);
+            let imgSrc = data.image
+            let recipeName = data.name
+            let ingredients = mintRecipeEvent[index].args._ingredients
+            let newRecipe = await getRecipe(mintRecipeEvent[index].blockNumber, ingredients)
+
+            let newCrystalRecipe = {name: recipeName,
+                image: imgSrc,
+                ingredients: newRecipe
+                }
+    
+            setMintedRecipes(oldArray => [newCrystalRecipe,...oldArray])   
+            count++                              
+        }                      
+    }
+
+    async function loadNewestRecipes() {
+        let currentBlock = await providerPolygon.getBlockNumber()
+        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-10000, currentBlock)
+
+        let count = 0;
+        for (let index = 0; index < newRecipeEvents.length; index++) {
+            if(count >= 5) {break}
+            let _recipeId = newRecipeEvents[index].args._recipe_id
+            const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipeId).toString());
+            const { data } = await axios.get(url);
+            let recipeName = data.name
+    
+            let newRecipe
+            let eventBlock = newRecipeEvents[index].blockNumber
+            let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', eventBlock, eventBlock);
+            for (let index = 0; index < mintRecipeEvent.length; index++) {
+                if(Number(mintRecipeEvent[index].args._recipe_id) == Number(_recipeId))
+                {
+                    let ingredients = mintRecipeEvent[index].args._ingredients
+                    newRecipe = await getRecipe(eventBlock, ingredients)
+                }
+            }
+            let latestNewRecipe = {name: recipeName,
+                                    ingredients: newRecipe
+                                    }
+    
+            setNewRecipes(oldArray => [latestNewRecipe,...oldArray])    
+            count++            
+        }
+    }
+
+        return (
         <Container>
             <div className="columns">
                     <div className="column">
                         <div className="header">
                             <div className="header-text">
-                                {headers[1]}
+                                {headers[0]}
                             </div>
                         </div>
                         <div className="column-body">
@@ -509,50 +563,47 @@ function Main() {
                         </div>
                     </div>
                 </div>
-
-                <div className="columns">
-                    <div className="column">
-                        <div className="header">
-                            <div className="header-text">
-                                {headers[2]}
-                            </div>
+            <div className="columns">
+                <div className="column">
+                    <div className="header">
+                        <div className="header-text">
+                            {headers[1]}
                         </div>
-                        <div className="column-body">
-                            <List className='list-div'>
-                                {newCrystalRecipe.map((item, index) => (   
-                                        <ListItem className="recipe-div" key={index}> 
-                                            <span className="item-name">{item.name}</span>
-                                            <div className="ingredients-div"> 
-                                                   {parseImages(item)}
-                                            </div>
-                                        </ListItem>
-                                ))}
-                            </List>
-                            <Button style={{position:"absolute",bottom:"0"}} onClick={() => loadNewRecipes()}>LOAD NEW RECIPES</Button> 
-                        </div>
+                    </div>
+                    <div className="column-body">
+                        <List className='list-div'>
+                            {newRecipes.map((item, index) => (   
+                                    <ListItem className="recipe-div" key={index}> 
+                                        <span className="item-name">{item.name}</span>
+                                        <div className="ingredients-div"> 
+                                                {parseImages(item)}
+                                        </div>
+                                    </ListItem>
+                            ))}
+                        </List>
                     </div>
                 </div>
-
+            </div>
             <div className="columns">
-                    <div className="column">
-                        <div className="header">
-                            <div className="header-text">
-                                {headers[0]}
-                            </div>
-                        </div>
-                        <div className="column-body">
-                            <List className="list-div">
-                                {newRecipes.map((item, index) => ( 
-                                        <ListItem className="recipe-div" key={index}>
-                                            <span className="item-name">{item.name}</span>
-                                            <div className="ingredients-div"> 
-                                                   {parseImages(item)}
-                                            </div>
-                                        </ListItem>   
-                                ))}
-                            </List>  
+                <div className="column">
+                    <div className="header">
+                        <div className="header-text">
+                            {headers[2]}
                         </div>
                     </div>
+                    <div className="column-body">
+                        <List className="list-div">
+                            {newCrystalRecipe.map((item, index) => ( 
+                                    <ListItem className="recipe-div" key={index}>
+                                        <span className="item-name">{item.name}</span>
+                                        <div className="ingredients-div"> 
+                                                {parseImages(item)}
+                                        </div>
+                                    </ListItem>   
+                            ))}
+                        </List>  
+                    </div>
+                </div>
                 </div>
         </Container>
         
