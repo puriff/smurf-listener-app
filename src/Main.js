@@ -5,6 +5,8 @@ import { darkTheme } from './theme';
 import axios from "axios";
 import { Box, Button, List } from "@mui/material";
 import ListItem from "@mui/material/ListItem";
+import notiSound from './notification.mp3';
+
 
 const Container = styled.div`
     position: relative;
@@ -180,6 +182,7 @@ const smurfMixAddress = "0x48c75FbF0452fA8FF2928Ddf46B0fE7629cCa2FF"
 const smurfMixContract = new ethers.Contract(smurfMixAddress, abiMix, providerPolygon)
 const smurfTicketAddress = "0xBaC7E3182BB6691F180Ef91f7Ae4530Abb3dc08D"
 const smurfTicketContract = new ethers.Contract(smurfTicketAddress, abiPoly, providerPolygon)
+const audio = new Audio(notiSound);
 
 const ingredientList = [
     "Blue_Clay",
@@ -215,9 +218,11 @@ function Main() {
     let headers = ["Latest successful recipes", "New recipes", "New crystal recipes"]
     
     useEffect(() => {
+        notificationPermission()
         loadLatestCrystalRecipes()
         loadLatestMintedRecipes()
         loadNewestRecipes()
+
         smurfMixContract.on("Mint_Recipe_Success", async(from, _recipe_id,_signature, _ingredients, event) => {   
             const url = "https://app.thesmurfssociety.com/metadata/public/metadata/cauldron/"+(Number(_recipe_id).toString());
             const { data } = await axios.get(url);
@@ -230,6 +235,7 @@ function Main() {
                                 ingredients: fullRecipe
                                 }
             setMintedRecipes(oldArray => [mintedRecipe,...oldArray])
+            showNotification("RECIPE MINTED",recipeName)
         })
 
         smurfMixContract.on("New_Recipe_Discovered", async(_from, _recipeId, event) => {
@@ -245,11 +251,11 @@ function Main() {
                 for (let index = 0; index < mintRecipeEvent.length; index++) {
                 //if finds an event with same recipe ID created as newest recipe
                 if(Number(mintRecipeEvent[index].args._recipe_id) == Number(_recipeId))
-                    {
-                    //get ingredient
-                    let ingredients = mintRecipeEvent[index].args._ingredients
-                    newRecipe = await getRecipe(currentBlock, ingredients)
-                    }
+                {
+                //get ingredient
+                let ingredients = mintRecipeEvent[index].args._ingredients
+                newRecipe = await getRecipe(currentBlock, ingredients)
+                }
             }
     
             let latestNewRecipe = {name: recipeName,
@@ -257,6 +263,7 @@ function Main() {
                                     }
     
             setNewRecipes(oldArray => [latestNewRecipe,...oldArray])
+            showNotification("NEW RECIPE DISCOVERED",latestNewRecipe.name)
         })
 
         smurfTicketContract.on("Mint_Ticket_Success", async(_from, _recipeId, event) => {
@@ -287,11 +294,11 @@ function Main() {
                                 newRecipe = await getRecipe(newRecipeEvent.blockNumber, ingredients)
 
                                 let newCrystalRecipe = {name: recipeName,
-                                    image: imgSrc,
                                     ingredients: newRecipe
                                     }
                         
                                 setNewCrystalRecipes(oldArray => [newCrystalRecipe,...oldArray])  
+                                showNotification("NEW CRYSTAL MINTED",newCrystalRecipe.name)
                                 break
                             }
                     }                
@@ -315,6 +322,30 @@ function Main() {
             setNewRecipes(copyArr)
         }
     }, [newRecipes])
+
+    function notificationPermission() {
+        if(Notification.permission === 'granted') {
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(function (permission) {
+            });
+        }
+    }
+
+    function showNotification(title, body) {
+        const notification = new Notification(title, {
+            body: body,
+            silent: false,
+            vibrate: true,
+        })
+        audio.play();
+
+        notification.onclick = () => {
+            window.parent.parent.focus();
+            notification.close()
+        };
+
+        setTimeout(() => notification.close(), 50*1000);
+    }
 
     async function getRecipe(blockNumber, ingredients) {    
         let ingredientsTMP = []  
