@@ -208,20 +208,11 @@ const ingredientList = [
 
 function Main() {
 
-    let testID = {  name: "test",
-                    ingredients: [[2, [18, 6, 9], 15], 12, 7]
-    }
-    let testNew = {name: "testNew",
-                        ingredients: [1,9,15]}
-
-    const [mintedRecipes, setMintedRecipes] = useState([testID])
-    const [failedRecipes, setFailedRecipes] = useState([])
-    const [newRecipes, setNewRecipes] = useState([testID])
-    const [newCrystalRecipe, setNewCrystalRecipes] = useState([testID])
+    const [mintedRecipes, setMintedRecipes] = useState([])
+    const [newRecipes, setNewRecipes] = useState([])
+    const [newCrystalRecipe, setNewCrystalRecipes] = useState([])
 
     let headers = ["Latest successful recipes", "New recipes", "New crystal recipes"]
-
-    
     
     useEffect(() => {
         loadLatestCrystalRecipes()
@@ -239,11 +230,6 @@ function Main() {
                                 ingredients: fullRecipe
                                 }
             setMintedRecipes(oldArray => [mintedRecipe,...oldArray])
-        })
-    
-        smurfMixContract.on("Mint_Recipe_Failed", async(from, _ingredients, event) => {            
-            let mintedRecipe = Number(_ingredients[0]) + " , " + Number(_ingredients[1]) + " , " + Number(_ingredients[2])
-            setFailedRecipes(oldArray => [mintedRecipe,...oldArray])
         })
 
         smurfMixContract.on("New_Recipe_Discovered", async(_from, _recipeId, event) => {
@@ -313,18 +299,6 @@ function Main() {
             }
         })
     }, [])
-
-    //on button click
-    //get last new recipe events
-    //exec code from on event received
-
-    useEffect(() => {
-        if(failedRecipes.length > 10) {
-            const copyArr = [...failedRecipes];
-            copyArr.pop();
-            setFailedRecipes(copyArr)
-        }
-    }, [failedRecipes])
 
     useEffect(() => {
         if(mintedRecipes.length > 10) {

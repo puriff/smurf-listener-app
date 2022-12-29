@@ -1,0 +1,3 @@
+some filter/search for existing potions
+pull all failed ones
+save in csv instead of having to query api each time

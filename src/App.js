@@ -38,12 +38,11 @@ function App() {
 
   function handleSwitchMode() {
       setMode(!mode)
-      console.log(mode)
   }
 
   return (
       <Container>
-          <Button className='switch-button' onClick={() => handleSwitchMode()}> { mode ? "Switch to crystal search" : "Switch to potion search"}</Button>
+          <Button className='switch-button' onClick={() => handleSwitchMode()}> { mode ? "Switch to potion search" : "Switch to crystal search" }</Button>
           { mode ? <Main/> : <PotionSearch/>}
       </Container>
   );
