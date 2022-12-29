@@ -235,7 +235,6 @@ function Main() {
                                 ingredients: fullRecipe
                                 }
             setMintedRecipes(oldArray => [mintedRecipe,...oldArray])
-            showNotification("RECIPE MINTED",recipeName)
         })
 
         smurfMixContract.on("New_Recipe_Discovered", async(_from, _recipeId, event) => {
