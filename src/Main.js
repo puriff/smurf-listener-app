@@ -14,7 +14,7 @@ const Container = styled.div`
     height: 95%;
     display: flex;
     margin: auto;
-    background: red;
+    background: ${darkTheme.background};
     border-radius: 5px;
     
     .columns {
