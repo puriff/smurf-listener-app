@@ -2,7 +2,7 @@ import { Button } from '@mui/material';
 import { useEffect, useState } from 'react';
 import styled, { ThemeProvider } from "styled-components";
 import Main from './Main';
-import LoadPotion from './loadPotions';
+import LoadPotion from './LoadPotion';
 import { darkTheme } from './theme';
 
 const Container = styled.div`

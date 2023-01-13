@@ -174,10 +174,30 @@ function LoadPotion() {
 
     const [recipes, setRecipes] = useState([])
     const [count, setCount] = useState(0)
+    const [block, setBlock] = useState(0)
+    const [blockCount, setBlockCount] = useState(0)
+
+    const incrementBlocks = async() => {
+        if(blockCount == 0) {
+            let currentBlock = await providerPolygon.getBlockNumber()
+            let lowerLimit = currentBlock-10000
+            setBlock(lowerLimit)
+            setBlockCount(blockCount => (blockCount+10000))
+            return [currentBlock, lowerLimit]
+        }
+        else {
+            let currentBlock = block
+            let lowerLimit = block - 10000
+            setBlock(lowerLimit)
+            setBlockCount(blockCount => (blockCount+10000))
+            return [currentBlock, lowerLimit]
+        }
+    }
 
     async function loadRecipes() {
         let currentBlock = await providerPolygon.getBlockNumber()
-        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-10000, currentBlock)
+        let startingBlock = await incrementBlocks()
+        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', startingBlock[1], startingBlock[0])
         let countTMP = 0
         for (let index = 0; index < newRecipeEvents.length; index++) {
             let _recipeId = newRecipeEvents[index].args._recipe_id
@@ -201,6 +221,10 @@ function LoadPotion() {
     
             setRecipes(oldArray => [latestNewRecipe,...oldArray])   
             setCount((count) => count + 1);
+        }
+        if(blockCount <= 50000) {
+            console.log(blockCount)
+            await loadRecipes()
         }
     }
 
