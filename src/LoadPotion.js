@@ -2,9 +2,9 @@ import styled from "styled-components";
 import { ethers } from "ethers";
 import { darkTheme } from './theme';
 import axios from "axios";
-import { Box, Button } from "@mui/material";
+import { Box, Button, IconButton, InputAdornment, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
-
+import SearchIcon from "@mui/icons-material/Search";
 
 const Container = styled.div`
     position: relative;
@@ -30,6 +30,29 @@ const Container = styled.div`
                 background: transparent;
                 color: white;
                 border: 1px white solid;
+            }
+        }
+
+        .search-div {
+        position: relative;
+        width: 50%;
+        height: fit-content;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: auto;
+
+            .search-bar {
+                margin-top: 2%;
+                width: 100%;
+
+                .MuiInputBase-root {
+                    color: white;
+                    
+                    :after {
+                        border-color: white;
+                    }
+                }
             }
         }
     
@@ -120,7 +143,7 @@ const Container = styled.div`
 `;
 
 const providerPolygon = new ethers.providers.StaticJsonRpcProvider(
-    "https://polygon-rpc.com/", 
+    "https://polygon.llamarpc.com", 
     {
       chainId: 137,
       name: "Polygon",
@@ -176,6 +199,7 @@ function LoadPotion() {
     const [count, setCount] = useState(0)
     const [block, setBlock] = useState(0)
     const [blockCount, setBlockCount] = useState(0)
+    const [searchElement, setSearchElement] = useState([])
 
     const incrementBlocks = async() => {
         if(blockCount == 0) {
@@ -197,7 +221,7 @@ function LoadPotion() {
     async function loadRecipes() {
         let currentBlock = await providerPolygon.getBlockNumber()
         let startingBlock = await incrementBlocks()
-        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', startingBlock[1], startingBlock[0])
+        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-150000, currentBlock)
         let countTMP = 0
         for (let index = 0; index < newRecipeEvents.length; index++) {
             let _recipeId = newRecipeEvents[index].args._recipe_id
@@ -207,7 +231,7 @@ function LoadPotion() {
 
             let newRecipe
             let eventBlock = newRecipeEvents[index].blockNumber
-            let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', eventBlock, eventBlock);
+            let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', eventBlock-100, eventBlock);
             for (let index = 0; index < mintRecipeEvent.length; index++) {
                 if(Number(mintRecipeEvent[index].args._recipe_id) == Number(_recipeId))
                 {
@@ -218,13 +242,9 @@ function LoadPotion() {
             let latestNewRecipe = {name: recipeName,
                                     ingredients: newRecipe
                                     }
-    
+                                    
             setRecipes(oldArray => [latestNewRecipe,...oldArray])   
             setCount((count) => count + 1);
-        }
-        if(blockCount <= 50000) {
-            console.log(blockCount)
-            await loadRecipes()
         }
     }
 
@@ -256,7 +276,7 @@ function LoadPotion() {
       //there is a potion in latest recipe list, so need to get ingredient of that potion aswell
     async function getPotionIngredients(currentBlock, lastRecipeFound) {
         //query pas blocks, to find tx where recipe id = recipe we need to find list of ingredients for
-        let pastEvents = await smurfMixContract.queryFilter("Mint_Recipe_Success", currentBlock-50000, currentBlock);
+        let pastEvents = await smurfMixContract.queryFilter("Mint_Recipe_Success", currentBlock, currentBlock);
         //loop through events
         for (let index = 0; index < pastEvents.length; index++) {
             //check if recipe minted id = recipe we're looking for
@@ -268,7 +288,9 @@ function LoadPotion() {
                 for (let index = 0; index < ingredients.length; index++) {
                     //if yes, we start agane
                     if(Number(ingredients[index]) > 99 ) {
+                        console.log(Number(ingredients[index]))
                         let ingredientsFull = await getPotionIngredients(currentBlock, Number(ingredients[index]))
+                        
                         ingredientsTMP[index] = [Number(ingredientsFull[0]),Number(ingredientsFull[1]),Number(ingredientsFull[2])]
                     }
                     else {
@@ -328,11 +350,32 @@ function LoadPotion() {
     return (
         <Container>
             <div className="content-panel">
-                <Button className="load-button" onClick={()=>loadRecipes()}>LOAD ALL RECIPES</Button>
+            <div className="search-div">
+                <TextField className="search-bar" variant="outlined" label="Enter address"
+                            color="warning"
+                            focused
+                            value= {searchElement}
+                            onChange= {(e) => setSearchElement(e.target.value)}
+                            InputProps={{
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton color="warning"
+                                        onClick={() => loadRecipes()}
+                                    >
+                                        <SearchIcon />
+                                    </IconButton>
+                                </InputAdornment>
+                            )
+                            }}
+                ></TextField>
+            </div>
                 <div>Number of potions : {count}</div>
                 <div className="list-div">
                     {recipes.map((recipe) => 
-                        <div className="ingredients-div"> <p className="recipe-name">{recipe.name}</p> <div className="recipe-div">{parseImages(recipe)}</div></div>
+                        {return (((recipe.ingredients).toString()).includes(searchElement.toString())) ?
+                             <div className="ingredients-div" key={recipe.name}> <p className="recipe-name">{recipe.name}</p> <div className="recipe-div">{parseImages(recipe)}</div></div>
+                            :
+                            null}
                     )}
                 </div>
             </div>

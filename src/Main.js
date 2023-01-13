@@ -220,6 +220,8 @@ function Main() {
     const [mintedRecipes, setMintedRecipes] = useState([])
     const [newRecipes, setNewRecipes] = useState([])
     const [newCrystalRecipe, setNewCrystalRecipes] = useState([])
+    const [block, setBlock] = useState(0)
+    const [blockCount, setBlockCount] = useState(0)
 
     let headers = ["Latest successful recipes", "New recipes", "New crystal recipes"]
     
@@ -352,6 +354,23 @@ function Main() {
         setTimeout(() => notification.close(), 50*1000);
     }
 
+    const incrementBlocks = async() => {
+        if(blockCount == 0) {
+            let currentBlock = await providerPolygon.getBlockNumber()
+            let lowerLimit = currentBlock-10000
+            setBlock(lowerLimit)
+            setBlockCount(blockCount => (blockCount+10000))
+            return [currentBlock, lowerLimit]
+        }
+        else {
+            let currentBlock = block
+            let lowerLimit = block - 10000
+            setBlock(lowerLimit)
+            setBlockCount(blockCount => (blockCount+10000))
+            return [currentBlock, lowerLimit]
+        }
+    }
+
     async function getRecipe(blockNumber, ingredients) {    
         let ingredientsTMP = []  
         for (let index = 0; index < ingredients.length; index++) {
@@ -449,10 +468,10 @@ function Main() {
 
     async function loadLatestCrystalRecipes() {
         //replace this with event.blockNumber
-        let currentBlock = await providerPolygon.getBlockNumber()
+        let currentBlocks = await incrementBlocks()
         let count = 0
-        let events = await smurfTicketContract.queryFilter('Mint_Ticket_Success', currentBlock-10000, currentBlock);
-        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-10000, currentBlock);
+        let events = await smurfTicketContract.queryFilter('Mint_Ticket_Success', currentBlocks[1], currentBlocks[0]);
+        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlocks[1], currentBlocks[0]);
 
         for (let index = 0; index < events.length; index++) {
             if(count >= 5) {break}
@@ -493,11 +512,20 @@ function Main() {
             }
             count++
         }
+        if(blockCount <= 50000) {
+            console.log(blockCount)
+            await loadLatestCrystalRecipes()
+        }
+        else{
+            setBlock(await providerPolygon.getBlockNumber())
+            setBlockCount(0)
+        }
     }
 
     async function loadLatestMintedRecipes() {
         let currentBlock = await providerPolygon.getBlockNumber()
         let mintRecipeEvent = await smurfMixContract.queryFilter('Mint_Recipe_Success', currentBlock-1000,currentBlock);
+        console.log(currentBlock)
 
         let count = 0
         for (let index = 0; index < mintRecipeEvent.length; index++) {
@@ -522,7 +550,7 @@ function Main() {
     async function loadNewestRecipes() {
         let currentBlock = await providerPolygon.getBlockNumber()
         let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-10000, currentBlock)
-
+        
         let count = 0;
         for (let index = 0; index < newRecipeEvents.length; index++) {
             if(count >= 5) {break}
