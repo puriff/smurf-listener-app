@@ -161,17 +161,23 @@ const ingredientList = [
     "Strange_Cube",
     "Carnivorous_Plant_Saliva",
     "Love_Potion",
-    "Red_Beans"
+    "Red_Beans",
+    "Grace_of_the_Swans",
+    "Spiked_Bracelet",
+    "Wisdom_of_the_Storks",
+    "Moon_Feather",
+    "Sigh_of_a_Dragon",
+    "Macaque_s_Canine_Tooth",
   ]
 
-function PotionSearch() {
+function LoadPotion() {
 
     const [recipes, setRecipes] = useState([])
     const [count, setCount] = useState(0)
 
     async function loadRecipes() {
         let currentBlock = await providerPolygon.getBlockNumber()
-        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', 0, currentBlock)
+        let newRecipeEvents = await smurfMixContract.queryFilter('New_Recipe_Discovered', currentBlock-10000, currentBlock)
         let countTMP = 0
         for (let index = 0; index < newRecipeEvents.length; index++) {
             let _recipeId = newRecipeEvents[index].args._recipe_id
@@ -307,8 +313,7 @@ function PotionSearch() {
                 </div>
             </div>
         </Container>
-        
     )
 }
 
-export default PotionSearch
+export default LoadPotion

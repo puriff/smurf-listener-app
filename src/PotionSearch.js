@@ -116,6 +116,8 @@ const Container = styled.div`
                     border-radius: 50%;
                 }
             }
+        }
+    }
 `;
 
 const providerPolygon = new ethers.providers.StaticJsonRpcProvider(
@@ -161,7 +163,13 @@ const ingredientList = [
     "Strange_Cube",
     "Carnivorous_Plant_Saliva",
     "Love_Potion",
-    "Red_Beans"
+    "Red_Beans",
+    "Grace_of_the_Swans",
+    "Spiked_Bracelet",
+    "Wisdom_of_the_Storks",
+    "Moon_Feather",
+    "Sigh_of_a_Dragon",
+    "Macaque_s_Canine_Tooth",
   ]
 
 function PotionSearch() {
@@ -249,9 +257,7 @@ function PotionSearch() {
                     <div className="ingredients-div"> <p className="recipe-name">{recipe.name}</p> </div>
                 )}
             </div>
-
-        </Container>
-        
+        </Container>     
     )
 }
 

@@ -2,7 +2,7 @@ import { Button } from '@mui/material';
 import { useEffect, useState } from 'react';
 import styled, { ThemeProvider } from "styled-components";
 import Main from './Main';
-import PotionSearch from './PotionSearch';
+import LoadPotion from './loadPotions';
 import { darkTheme } from './theme';
 
 const Container = styled.div`
@@ -43,7 +43,7 @@ function App() {
   return (
       <Container>
           <Button className='switch-button' onClick={() => handleSwitchMode()}> { mode ? "Switch to potion search" : "Switch to crystal search" }</Button>
-          { mode ? <Main/> : <PotionSearch/>}
+          { mode ? <Main/> : <LoadPotion/>}
       </Container>
   );
   
